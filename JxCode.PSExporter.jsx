@@ -21,6 +21,9 @@ function Path_prepare(path) {
         folder.create();
     }
 }
+function Path_writablePath() {
+    return "~/Desktop";
+}
 /*class Size*/
 function Size(width, height) {
     this.width = width;
@@ -69,7 +72,17 @@ function Transform() {
     this.location = null;
     this.bounds = null;
 }
-
+function Transform_parseBounds(bounds) {
+    var ltx = bounds[0].as("px");
+    var lty = bounds[1].as("px");
+    var rbx = bounds[2].as("px");
+    var rby = bounds[3].as("px");
+    var transform = new Transform();
+    transform.size = new Size(rbx - ltx, rby - lty);
+    transform.location = new Point(ltx, lty);
+    transform.bounds = bounds;
+    return transform;
+}
 // class LayerNameInfo
 function LayerNameInfo(isExport, isCut, cutSize, tag, quality, filename) {
     this.isExport = isExport;
@@ -119,14 +132,17 @@ LayerMetaInfo.prototype.toString = function() {
     return "{location: " + this.location.toString() + ", order: " + this.order;
 }
 
-// class ExportLayerInfo
-function ExportLayerInfo() {
-    this.layer = null;
-    this.path = null;
-    this.layerNameInfo = null;
-    this.layerMetaInfo = null;
+function resizeBoundsBySize(bounds, size) {
+    var trans = Transform_parseBounds(bounds);
+    var xOffset = (size.width - trans.size.width) / 2;
+    var yOffset = (size.height - trans.size.height) / 2;
+    var arr = new Array();
+    arr.push(UnitValue(bounds[0].as("px") - xOffset, "px"));
+    arr.push(UnitValue(bounds[1].as("px") - yOffset, "px"));
+    arr.push(UnitValue(bounds[2].as("px") + xOffset, "px"));
+    arr.push(UnitValue(bounds[3].as("px") + yOffset, "px"));
+    return arr;
 }
-
 
 
 // class LayerName
@@ -331,9 +347,11 @@ function XML_getLayer(layer, order) {
     return xml;
 }
 
-function XML_exportDocument(document) {
-    var width = document.width.as("px");
-    var height = document.height.as('px');
+
+function XML_getDocument(document) {
+    var size = Document_getSize(document);
+    var width = size.width;
+    var height = size.height;
     var xml = new XML("<Document Name=\"" + document.name + "\" Width=\"" + width + "\" Height=\"" + height + "\"></Document>");
 
     var layers = document.layers;
@@ -346,50 +364,23 @@ function XML_exportDocument(document) {
     }
     return xml;
 }
+function XML_exportDocument(document, filename) {
+    var path = Path_getDirectoryName(filename);
+    Path_prepare(path);
+    var file = File(filename);
+    var xmlStr = XML_getDocument(document).toXMLString();
+    file.write(xmlStr);
+    file.close();
+}
 
 //class Layer
 function Layer_getTransform(layer) {
-    var bounds = layer.bounds;
-    var x1 = bounds[0].as("px");
-    var y1 = bounds[1].as("px");
-    var x2 = bounds[2].as("px");
-    var y2 = bounds[3].as("px");
-    var transform = new Transform();
-    transform.size = new Size(x2 - x1, y2 - y1);
-    transform.location = new Point(x1, y1);
-    transform.bounds = bounds;
-    return transform;
+    return Transform_parseBounds(layer.bounds);
 }
-function Layer_hideArt(artLayer)
-{
-    artLayer.visible = false;
-}
-function Layer_hideLayerSet(layerSet)
-{
-    var layers = layerSet.layers;
-    for(var index = 0; index < layers.length; index++)
-    {
-        var item = layers[index];
-        if(item.typename == "ArtLayer")
-        {
-            Layer_hideArt(item);
-        }
-        else if(item.typename == "LayerSet")
-        {
-            Layer_hideArt(item);
-        }
-    }
-}
+
 function Layer_hide(layer)
 {
-    if(layer.typename == "ArtLayer")
-    {
-        Layer_hideArt(layer);
-    }
-    else if(layer.typename == "LayerSet")
-    {
-        Layer_hideLayerSet(layer);
-    }
+    layer.visible = false;
 }
 function Layer_hideAll(document)
 {
@@ -446,25 +437,6 @@ function Layer_getNameInfo(layer) {
     }
     return layerInfo;
 }
-//return LayerMetaInfo
-function Layer_getMetaInfo(layer) {
-    var metaInfo = new LayerMetaInfo();
-    var trans = Layer_getTransform(layer);
-    metaInfo.location = trans.location;
-    metaInfo.opacity = layer.opacity;
-    var layers = layer.parent.layers;
-
-    var idx = -1;
-    for(var i = 0; i < layers.length; i++) {
-        if(layers[i] == layer) {
-            idx = i;
-            break;
-        }
-    }
-
-    metaInfo.order = idx;
-    return metaInfo;
-}
 
 //TODO
 function Layer_exportLayer(document, layer) {
@@ -492,24 +464,114 @@ function Layer_exportLayer(document, layer) {
 
 }
 
+
+function Layer_getLayerPath(layer) {
+    var arr = new Array();
+    arr.push(layer.name);
+    var p = layer;
+    while((p = p.parent) != null) {
+        if(p.typename != "ArtLayer" && p.typename != "LayerSet") {
+            break;
+        }
+        arr.push(p.name);
+    }
+    return arr;
+}
+function Layer_findLayer(document, pathArr) {
+    var c = document;
+    for(var i = pathArr.length - 1; i >= 0; i--) {
+        c = c.layers.getByName(pathArr[i]);
+    }
+    return c;
+}
+function Layer_hideAllWithoutLayer(rootLayers, targetLayer) {
+    var layers = rootLayers.layers;
+    for(var i = 0; i < layers.length; i++) {
+        var layer = layers[i];
+        if(layer == targetLayer) {
+            continue;
+        }
+        if(layer.typename == "LayerSet"){
+            Layer_hideAllWithoutLayer(layer, targetLayer);
+        } else {
+            Layer_hide(layer);
+        }
+    }
+}
+
 /*class Document*/
 function Document_save(document, filename, quality) {
     var file = new File(filename);
     var exportOption = new ExportOptionsSaveForWeb();
     exportOption.PNG8 = false;
     exportOption.quality = (quality + 1) * 10;
-    exportOption.format = getDocumentTypeByExt(Path.getFileNameExt(filename));
+    exportOption.format = LayerName_getTypeByExt(Path_getFileNameExt(filename));
     document.exportDocument(file, ExportType.SAVEFORWEB, exportOption);
 }
 
-function main() {
+function Document_exportLayer(document, layer, path) {
+    if(!layer.visible) {
+        return;
+    }
+    var nameInfo = Layer_getNameInfo(layer);
+    if(!nameInfo.isExport) {
+        return;
+    }
+    if(nameInfo.isExtern) {
+        return;
+    }
+    //求Layer路径后在复制的doc上获取Layer
+    var newDocument = document.duplicate();
+    var newLayer = Layer_findLayer(newDocument, Layer_getLayerPath(layer));
+    Layer_hideAllWithoutLayer(newDocument, newLayer);
+    var trans = Layer_getTransform(newLayer);
 
-    var document = app.activeDocument;
-    var exportFolder = "~/Desktop/" + document.name + "/";
+    if(nameInfo.isCut) {
+        var arr = resizeBoundsBySize(trans.bounds, nameInfo.cutSize);
+        newDocument.crop(arr, 0);
+    }
+    Path_prepare(path);
+    Document_save(newDocument, path + "/" + nameInfo.filename, nameInfo.quality);
 
+    newDocument.close(SaveOptions.DONOTSAVECHANGES);
+}
+
+function Document_getSize(document) {
+    return new Size(document.width.as("px"), document.height.as("px"));
+}
+function Document_exportAllLayer(document, documentXML) {
+    //按照Order顺序，赋值文档后，先隐藏其他图层，在进行裁剪导出。
+    var children = documentXML.children();
+    for(var i = 0; i < children.length(); i++) {
+        // Document_exportLayer(document, )
+    }
+
+}
+function Document_exportAllData(document) {
     var xml = XML_exportDocument(document);
-    alert(xml);
+    Document_exportAllLayer(document, xml);
+}
+function main() {
+    var document;
+    try {
+        document = app.activeDocument;
+    }catch(e) {
+        alert("No ActiveDocument");
+        return;
+    }
 
+    var exportFolder = "~/Desktop/Assets_" + document.name + "/";
 
+    // var xml = XML_exportDocument(document);
+    // var a = xml.children();
+    // var b = a[0];
+    // alert();
+    // alert(xml);
+    // var p = Layer_getLayerPath(document.activeLayer);
+    // var l = Layer_findLayer(document, p);
+    // alert(l.name);
+    // Document_exportAll(xml)
+    Document_exportLayer(document, document.activeLayer, exportFolder)
+    // alert(document.activeLayer.bounds);
 }
 main();
