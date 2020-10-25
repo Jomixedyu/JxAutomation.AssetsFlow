@@ -514,6 +514,13 @@ function Document_exportLayer(document, layer, path) {
         return;
     }
     var nameInfo = Layer_getNameInfo(layer);
+    //如果是图层组并且不是导出层的情况下则导出子图层
+    if(!nameInfo.isExport && layer.typename == "LayerSet") {
+        for(var i = 0; i <layer.layers.length; i++) {
+            Document_exportLayer(document, layer.layers[i], path);
+        }
+        return;
+    }
     if(!nameInfo.isExport) {
         return;
     }
@@ -539,13 +546,11 @@ function Document_exportLayer(document, layer, path) {
 function Document_getSize(document) {
     return new Size(document.width.as("px"), document.height.as("px"));
 }
-function Document_exportAllLayer(document, documentXML) {
-    //按照Order顺序，赋值文档后，先隐藏其他图层，在进行裁剪导出。
-    var children = documentXML.children();
-    for(var i = 0; i < children.length(); i++) {
-        // Document_exportLayer(document, )
+function Document_exportAllLayer(document, path) {
+    var layers = document.layers;
+    for(var i = 0; i < layers.length; i++) {
+        Document_exportLayer(document, layers[i], path);
     }
-
 }
 function Document_exportAllData(document) {
     var xml = XML_exportDocument(document);
@@ -560,7 +565,10 @@ function main() {
         return;
     }
 
-    var exportFolder = "~/Desktop/Assets_" + document.name + "/";
+    var exportFolder = "~/Desktop/Assets_" + document.name;
+    alert("按下确定后开始执行");
+
+    //UnitTest
 
     // var xml = XML_exportDocument(document);
     // var a = xml.children();
@@ -571,7 +579,9 @@ function main() {
     // var l = Layer_findLayer(document, p);
     // alert(l.name);
     // Document_exportAll(xml)
-    Document_exportLayer(document, document.activeLayer, exportFolder)
+    // Document_exportLayer(document, document.activeLayer, exportFolder);
+    Document_exportAllLayer(document, exportFolder);
     // alert(document.activeLayer.bounds);
+    alert("导出完成");
 }
 main();

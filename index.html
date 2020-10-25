@@ -1,0 +1,82 @@
+<html>
+    <head>
+        <script type="text/javascript" src="./js/CSInterface.js"></script>
+        <style>
+            .inputLine{
+                width: 100%;
+                background-color: rgb(64,64,64);
+                color: rgb(240,240,240);
+                border: 0px;
+                height: 24px;
+            }
+            .btnLine {
+                width: 100%;
+                background-color: rgb(60,60,60);
+                color: rgb(240,240,240);
+                border: 0px;
+                height: 26px;
+                margin-top: 3px;
+            }
+            .text {
+                font-size: 14px;
+                color: rgb(240,240,240);
+            }
+            .noteText {
+                font-size: 12px;
+                color: rgb(160,160,160);
+                text-align: center;
+            }
+
+        </style>
+    </head>
+    <body style="background-color: rgb(83,83,83); margin-left: 20px; margin-right: 20px; margin-top: 20px;">
+
+        <h2 style="text-align: center; color: rgb(240,240,240);">JxCode.PSExporter</h2>
+        <p class="text"><input class="text" type="checkbox">IsExport</p>
+        <p class="text"><input class="text" type="checkbox">IsExtern</p>
+        <p class="text"><input class="text" type="checkbox">IsCut</p>
+
+        <div>
+        </div>
+
+        <table style="width: 100%;" border="0" >
+            <tr>
+                <td class="text" style="width: 70px;">Name</td>
+                <td><input class="inputLine" type="text" /></td>
+            </tr>
+            <tr>
+                <td class="text">CutSize</td>
+                <td class="text" style="text-align: center;">
+                    width: <input type="text" class="inputLine" style="width: 80px;"/>
+                    height: <input type="text" class="inputLine" style="width: 80px;"/>
+                </td>
+
+            </tr>
+            <tr>
+                <td class="text">Quality</td>
+                <td><input class="inputLine" type="text" /></td>
+            </tr>
+            <tr>
+                <td class="text">Tag</td>
+                <td><input class="inputLine" type="text" /></td>
+            </tr>
+            <tr>
+                <td class="text">Type</td>
+                <td><input class="inputLine" type="text" /></td>
+            </tr>
+        </table>
+        <br/>
+
+        <button class="btnLine">Apply</button>
+        <button class="btnLine">Refresh</button>
+        <button class="btnLine" style="margin-top: 30px;">ExportSelectLayer</button>
+        <button class="btnLine">ExportAllLayer</button>
+        <button class="btnLine">ExportDocumentMetaData</button>
+        <button class="btnLine">ExportAll</button>
+
+        <button class="btnLine" style="margin-top: 30px;">github</button>
+        
+        <p class="noteText" style="margin-top: 20px;">https://github.com/Jayshonyves/JxCode.PSExporter</p>
+        <p class="noteText" style="margin-top: -10px;">version 1.0</p>
+    </body>
+</html>
