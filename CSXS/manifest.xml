@@ -24,7 +24,7 @@
             <DispatchInfo>
                 <Resources>
                     <MainPath>./index.html</MainPath>
-                    <ScriptPath>./jsx/JxCode.PSExporter.jsx</ScriptPath>
+                    <ScriptPath>./jsx/JxCode_PSExporter.jsx</ScriptPath>
                 </Resources>
 
                 <Lifecycle>
@@ -46,8 +46,8 @@
                             <Width>900</Width>
                         </MaxSize>
                         <MinSize>
-                            <Height>300</Height>
-                            <Width>300</Width>
+                            <Height>400</Height>
+                            <Width>400</Width>
                         </MinSize>
                     </Geometry>
                     <!-- <Icons>

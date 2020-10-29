@@ -132,6 +132,7 @@ LayerMetaInfo.prototype.toString = function() {
     return "{location: " + this.location.toString() + ", order: " + this.order;
 }
 
+//用Size去变换一个Bounds
 function resizeBoundsBySize(bounds, size) {
     var trans = Transform_parseBounds(bounds);
     var xOffset = (size.width - trans.size.width) / 2;
@@ -438,32 +439,6 @@ function Layer_getNameInfo(layer) {
     return layerInfo;
 }
 
-//TODO
-function Layer_exportLayer(document, layer) {
-
-    if(!layer.visible)
-    {
-        return;
-    }
-    var transform = getLayerTransform(layer);
-    var propInfo = parseName(layer.name);
-    if(propInfo.cutSize == null)
-    {
-        propInfo.cutSize = transform.size;
-    }
-
-    var exportFolder = "~/Desktop/Assets_" + document.name + "/"
-    Path.prepare(exportFolder);
-    var dupDoc = document.duplicate();
-    hideAllLayer(dupDoc);
-    
-    // dupDoc.trim(TrimType.TRANSPARENT);
-    dupDoc.crop(transform.bounds, 0);
-    saveDocument(dupDoc, exportFolder + propInfo.filename, propInfo.quality);
-    dupDoc.close(SaveOptions.DONOTSAVECHANGES);
-
-}
-
 
 function Layer_getLayerPath(layer) {
     var arr = new Array();
@@ -497,6 +472,36 @@ function Layer_hideAllWithoutLayer(rootLayers, targetLayer) {
             Layer_hide(layer);
         }
     }
+}
+function Layer_setActiveLayerName(name) {
+    app.activeDocument.activeLayer.name = name;
+}
+function Layer_genLayerName(isExport, isExtern, isCut, name, cutSizeWidth, cutSizeHeight, quality, tag, type){
+    if(!isExport){
+        return name;
+    }
+    var str = isExtern ? LayerName_EXPORT : LayerName_EXTERN;
+    str += name + ";";
+    if(isCut) {
+        str += LayerName_CUT;
+        if(cutSizeWidth != null && cutSizeHeight != null) {
+            str += cutSizeWidth + "x" + cutSizeHeight;
+        }else if(cutSizeWidth != null && cutSizeHeight == null){
+            str += cutSizeWidth + "x" + cutSizeWidth;
+        }else if(cutSizeWidth == null && cutSizeHeight != null){
+            str += cutSizeHeight + "x" + cutSizeHeight;
+        }
+    }
+    if(quality != null) {
+        str += "$" + quality;
+    }
+    if(tag != null) {
+        str += "#" + tag.replace(";", "\\;") + ";";
+    }
+    if(type != null) {
+        str += "?" + type.replace(";", "\\;") + ";";
+    }
+    return str;
 }
 
 /*class Document*/
@@ -556,18 +561,40 @@ function Document_exportAllData(document) {
     var xml = XML_exportDocument(document);
     Document_exportAllLayer(document, xml);
 }
-function main() {
-    var document;
-    try {
+
+function RemoteTest(i) {
+    return alert("RemoteTest: " + i);
+}
+
+function ActiveDocument() {
+    var document = null;
+    try{
         document = app.activeDocument;
-    }catch(e) {
-        alert("No ActiveDocument");
-        return;
+    } catch(e) {
+        return null;
     }
+    return document;
+}
+function ActiveLayer() {
+    var document = ActiveDocument();
 
-    var exportFolder = "~/Desktop/Assets_" + document.name;
-    alert("按下确定后开始执行");
+}
+function Interface_getActiveLayerNameInfo() {
 
+    JSON.stringify(Layer_getNameInfo(app.activeDocument.activeLayer))
+}
+function main() {
+    // var document;
+    // try {
+    //     document = app.activeDocument;
+    // }catch(e) {
+    //     alert("No ActiveDocument");
+    //     return;
+    // }
+
+    // var exportFolder = "~/Desktop/Assets_" + document.name;
+    // alert("按下确定后开始执行");
+    alert(app.activeDocument.activeLayer.name)
     //UnitTest
 
     // var xml = XML_exportDocument(document);
@@ -580,8 +607,8 @@ function main() {
     // alert(l.name);
     // Document_exportAll(xml)
     // Document_exportLayer(document, document.activeLayer, exportFolder);
-    Document_exportAllLayer(document, exportFolder);
+    // Document_exportAllLayer(document, exportFolder);
     // alert(document.activeLayer.bounds);
-    alert("导出完成");
+    // alert("导出完成");
 }
 main();

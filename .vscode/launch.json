@@ -8,7 +8,7 @@
             "type": "extendscript-debug",
             "request": "launch",
             "name": "Run",
-            "program": "${workspaceFolder}/JxCode.PSExporter.jsx",
+            "program": "${workspaceFolder}/jsx/JxCode_PSExporter.jsx",
             "stopOnEntry": false
         },
     ]

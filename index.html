@@ -8,6 +8,8 @@
                 color: rgb(240,240,240);
                 border: 0px;
                 height: 24px;
+                border-radius: 14px;
+                text-indent: 10px;
             }
             .btnLine {
                 width: 100%;
@@ -16,6 +18,10 @@
                 border: 0px;
                 height: 26px;
                 margin-top: 3px;
+                border-radius: 14px;
+            }
+            .btnLine:hover{
+                background-color: rgb(0, 128, 200);
             }
             .text {
                 font-size: 14px;
@@ -28,13 +34,47 @@
             }
 
         </style>
+        <script>
+            (function(){
+                var cs = new CSInterface();
+
+                function loadJSX(fileName)
+                {
+                    var extensionRoot = cs.getSystemPath(SystemPath.EXTENSION) + "/js/";
+                    cs.evalScript('$.evalFile("' + extensionRoot + fileName + '")');
+                }
+
+                loadJSX("json2.js"); //为 JAX 载入 JSON 库
+
+                var event = new CSEvent("com.adobe.PhotoshopRegisterEvent", "APPLICATION");
+                event.extensionId = cs.getExtensionID();
+                event.data = "1936483188"; //select
+                cs.dispatchEvent(event);
+
+                cs.addEventListener("com.adobe.PhotoshopJSONCallback" + cs.getExtensionID(), function(e) {
+                    //图层被选中
+                    cs.evalScript("JSON.stringify(Layer_getNameInfo(app.activeDocument.activeLayer));",
+                        function(result){
+                            var r = JSON.parse(result);
+                            document.getElementById("isExport").checked = r.isExport;
+                            document.getElementById("isExtern").checked = r.isExtern;
+                            document.getElementById("isCut").checked = r.isCut;
+                        }
+                    );
+                });
+
+            })()
+            function Apply() {
+
+            }
+        </script>
     </head>
     <body style="background-color: rgb(83,83,83); margin-left: 20px; margin-right: 20px; margin-top: 20px;">
 
         <h2 style="text-align: center; color: rgb(240,240,240);">JxCode.PSExporter</h2>
-        <p class="text"><input class="text" type="checkbox">IsExport</p>
-        <p class="text"><input class="text" type="checkbox">IsExtern</p>
-        <p class="text"><input class="text" type="checkbox">IsCut</p>
+        <p class="text"><input id="isExport" class="text" type="checkbox">IsExport</p>
+        <p class="text"><input id="isExtern" class="text" type="checkbox">IsExtern</p>
+        <p class="text"><input id="isCut" class="text" type="checkbox">IsCut</p>
 
         <div>
         </div>
