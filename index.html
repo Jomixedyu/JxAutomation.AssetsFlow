@@ -35,45 +35,151 @@
 
         </style>
         <script>
-            (function(){
-                var cs = new CSInterface();
+            var cs = new CSInterface();
+            function loadJSX(fileName)
+            {
+                var extensionRoot = cs.getSystemPath(SystemPath.EXTENSION) + "/js/";
+                cs.evalScript('$.evalFile("' + extensionRoot + fileName + '")');
+            }
+            loadJSX("json2.js");
+            function IsExport() { return document.getElementById("isExport"); }
+            function IsExtern() { return  document.getElementById("isExtern"); }
+            function IsCut() { return document.getElementById("isCut"); }
+            function IsExportGroupProperties() { return document.getElementById("isExportGroupProperties"); }
+            function Name() { return document.getElementById("input_name"); }
+            function CutSizeWidth () { return  document.getElementById("intput_cutSize_width"); }
+            function CutSizeHeight () { return document.getElementById("intput_cutSize_height"); }
 
-                function loadJSX(fileName)
-                {
-                    var extensionRoot = cs.getSystemPath(SystemPath.EXTENSION) + "/js/";
-                    cs.evalScript('$.evalFile("' + extensionRoot + fileName + '")');
+            function Quality() { return document.getElementById("input_quality"); }
+            function Tag() { return document.getElementById("input_tag"); }
+            function Type() { return document.getElementById("input_type"); }
+
+            function Refresh() {
+                cs.evalScript("Interface_getActiveLayerNameInfo();",
+                    function(result) {
+                        var r = JSON.parse(result);
+
+                        if(r.isExport)
+                            SetIsExport(r.isExport);
+                        if(r.isExtern)
+                            SetIsExtern(r.isExtern);
+                        if(r.layerType == "LayerSet" && r.isExportMeta)
+                            SetIsExportGroupProperties(r.isExportGroupProperties);
+
+                        IsCut().checked = r.isCut;
+
+                        Name().value = r.filename;
+                        
+                        if(r.isCut) {
+                            CutSizeWidth().value = r.cutSize.width;
+                            CutSizeHeight().value = r.cutSize.height;
+                        } else {
+                            CutSizeWidth().value = null;
+                            CutSizeHeight().value = null;
+                        }
+    
+                        Quality().value = r.quality;
+                        Tag().value = r.tag;
+                        Type().value = r.type;
+                    }
+                );
+            }
+            function Apply() {
+                var obj = {
+                    isExport: IsExport().checked,
+                    isExtern: IsExtern().checked,
+                    isCut: IsCut().checked,
+                    cutSize: {
+                        width: null,
+                        height: null
+                    },
+                    filename: Name().value,
+                    quality: Quality().value,
+                    tag: Tag().value != "" ? Tag().value : null,
+                    type: Type().value != "" ? Type().value : null
                 }
 
-                loadJSX("json2.js"); //为 JAX 载入 JSON 库
+                if(obj.isCut) {
+                    obj.cutSize.width = CutSizeWidth().value;
+                    obj.cutSize.height = CutSizeHeight().value;
+                }
 
-                var event = new CSEvent("com.adobe.PhotoshopRegisterEvent", "APPLICATION");
-                event.extensionId = cs.getExtensionID();
-                event.data = "1936483188"; //select
-                cs.dispatchEvent(event);
+                cs.evalScript("Interface_genNameAndSetLayerName("+ JSON.stringify(obj) +");");
+            }
+            function ExportSelectLayer() {
+                cs.evalScript("Interface_exportSelectLayer();");
+            }
+            function ExportAllLayer() {
+                cs.evalScript("Interface_exportAllLayer();");
+            }
+            function ExportDocumentMetaData() {
+                cs.evalScript("Interface_exportDocumentMetaData();");
+            }
+            function ExportAll() {
+                cs.evalScript("Interface_exportAll();");
+            }
+
+            function CancelCheckExport() {
+                IsExport().checked = false;
+                IsExtern().checked = false;
+                IsExportGroupProperties().checked = false;
+            }
+            function SetIsExport(bol) {
+                CancelCheckExport();
+                IsExport().checked = bol;
+            }
+            function SetIsExtern(bol) {
+                CancelCheckExport();
+                IsExtern().checked = bol;
+            }
+            function SetIsExportGroupProperties(bol) {
+                CancelCheckExport();
+                IsExportGroupProperties().checked = bol;
+            }
+
+            function IsExport_Click() {
+                SetIsExport(IsExport().checked);
+            }
+            function IsExtern_Click() {
+                SetIsExtern(IsExtern().checked);
+            }
+            function IsExportGroupProperties_Click() {
+                SetIsExportGroupProperties(IsExportGroupProperties().checked);
+            }
+
+            (function(){
+                //事件Id参考 http://www.pcpix.com/Photoshop/enum.htm
+                var selEvent = new CSEvent("com.adobe.PhotoshopRegisterEvent", "APPLICATION");
+                selEvent.extensionId = cs.getExtensionID();
+                selEvent.data = "1936483188"; //select
+                cs.dispatchEvent(selEvent);
+
+                //TODO: 有个Bug，取消选择图层无法触发select，deselect也无法生效
+                // 并且在取消选择图层后在JSX端的activeLayer会被设置为第一个图层
+
+                // var deselEvent = new CSEvent("com.adobe.PhotoshopRegisterEvent", "APPLICATION");
+                // deselEvent.extensionId = cs.getExtensionID();
+                // deselEvent.data = "1148415075" //deselect
+                // cs.dispatchEvent(deselEvent);
 
                 cs.addEventListener("com.adobe.PhotoshopJSONCallback" + cs.getExtensionID(), function(e) {
-                    //图层被选中
-                    cs.evalScript("JSON.stringify(Layer_getNameInfo(app.activeDocument.activeLayer));",
-                        function(result){
-                            var r = JSON.parse(result);
-                            document.getElementById("isExport").checked = r.isExport;
-                            document.getElementById("isExtern").checked = r.isExtern;
-                            document.getElementById("isCut").checked = r.isCut;
-                        }
-                    );
+                    Refresh();
                 });
 
             })()
-            function Apply() {
 
-            }
         </script>
     </head>
     <body style="background-color: rgb(83,83,83); margin-left: 20px; margin-right: 20px; margin-top: 20px;">
 
-        <h2 style="text-align: center; color: rgb(240,240,240);">JxCode.PSExporter</h2>
-        <p class="text"><input id="isExport" class="text" type="checkbox">IsExport</p>
-        <p class="text"><input id="isExtern" class="text" type="checkbox">IsExtern</p>
+        <h2 style="text-align: center; color: rgb(240,240,240);">JxAutomation.AssetsFlow</h2>
+
+        <h4 style="color: rgb(240,240,240)" >ExportType</h3>
+        <p class="text"><input id="isExport" onclick="IsExport_Click()" class="text" type="checkbox">IsExport</p>
+        <p class="text"><input id="isExtern" onclick="IsExtern_Click()" class="text" type="checkbox">IsExtern</p>
+        <p class="text"><input id="isExportGroupProperties" onclick="IsExportGroupProperties_Click()" class="text" type="checkbox">IsExportGroupProperties</p>
+        
+        <h4 style="color: rgb(240,240,240)">Properties</h3>
         <p class="text"><input id="isCut" class="text" type="checkbox">IsCut</p>
 
         <div>
@@ -82,41 +188,57 @@
         <table style="width: 100%;" border="0" >
             <tr>
                 <td class="text" style="width: 70px;">Name</td>
-                <td><input class="inputLine" type="text" /></td>
+                <td><input id="input_name" class="inputLine" type="text" /></td>
             </tr>
             <tr>
                 <td class="text">CutSize</td>
                 <td class="text" style="text-align: center;">
-                    width: <input type="text" class="inputLine" style="width: 80px;"/>
-                    height: <input type="text" class="inputLine" style="width: 80px;"/>
+                    width: <input id="intput_cutSize_width" type="text" class="inputLine" style="width: 80px;"/>
+                    height: <input id="intput_cutSize_height" type="text" class="inputLine" style="width: 80px;"/>
                 </td>
 
             </tr>
             <tr>
                 <td class="text">Quality</td>
-                <td><input class="inputLine" type="text" /></td>
+                <td><input id="input_quality" class="inputLine" type="text" /></td>
             </tr>
             <tr>
                 <td class="text">Tag</td>
-                <td><input class="inputLine" type="text" /></td>
+                <td><input id="input_tag" class="inputLine" type="text" /></td>
             </tr>
             <tr>
                 <td class="text">Type</td>
-                <td><input class="inputLine" type="text" /></td>
+                <td>
+                    <input id="input_type" class="inputLine" list="typeList" type="text"/>
+                    <datalist id="typeList">
+                        <option>Image</option>
+                        <option>Text</option>
+                        <option>Button</option>
+                        <option>Slider</option>
+                        <option>HScrollBar</option>
+                        <option>VScrollBar</option>
+                        <option>Toggle</option>
+                        <option>InputBox</option>
+                        <option>CheckBox</option>
+                        <option>RadioBox</option>
+                        <option>ComboBox</option>
+                    </datalist>
+                   
+                </td>
             </tr>
         </table>
         <br/>
 
-        <button class="btnLine">Apply</button>
-        <button class="btnLine">Refresh</button>
-        <button class="btnLine" style="margin-top: 30px;">ExportSelectLayer</button>
-        <button class="btnLine">ExportAllLayer</button>
-        <button class="btnLine">ExportDocumentMetaData</button>
-        <button class="btnLine">ExportAll</button>
+        <button class="btnLine" onclick="Apply();">Apply</button>
+        <button class="btnLine" onclick="Refresh();">Refresh</button>
+        <button class="btnLine" onclick="ExportSelectLayer();" style="margin-top: 30px;">ExportSelectLayer</button>
+        <button class="btnLine" onclick="ExportAllLayer();">ExportAllLayer</button>
+        <button class="btnLine" onclick="ExportDocumentMetaData();">ExportDocumentMetaData</button>
+        <button class="btnLine" onclick="ExportAll();">ExportAll</button>
 
         <button class="btnLine" style="margin-top: 30px;">github</button>
         
-        <p class="noteText" style="margin-top: 20px;">https://github.com/Jayshonyves/JxCode.PSExporter</p>
+        <p class="noteText" style="margin-top: 20px;">https://github.com/Jayshonyves/JxAutomation.AssetsFlow</p>
         <p class="noteText" style="margin-top: -10px;">version 1.0</p>
     </body>
 </html>

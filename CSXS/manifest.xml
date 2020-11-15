@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<ExtensionManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ExtensionBundleId="com.imxqy.jxexporter" ExtensionBundleVersion="1.0" Version="6.0">
+<ExtensionManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ExtensionBundleId="com.imxqy.automation.assetsflow" ExtensionBundleVersion="1.0" Version="6.0">
     <ExtensionList>
-        <Extension Id="com.imxqy.jxexporter" Version="1.0"/>
+        <Extension Id="com.imxqy.automation.assetsflow" Version="1.0"/>
     </ExtensionList>
 
     <ExecutionEnvironment>
@@ -20,11 +20,11 @@
     </ExecutionEnvironment>
 
     <DispatchInfoList>
-        <Extension Id="com.imxqy.jxexporter">
+        <Extension Id="com.imxqy.automation.assetsflow">
             <DispatchInfo>
                 <Resources>
                     <MainPath>./index.html</MainPath>
-                    <ScriptPath>./jsx/JxCode_PSExporter.jsx</ScriptPath>
+                    <ScriptPath>./jsx/JxAutomation.AssetsFlow.jsx</ScriptPath>
                 </Resources>
 
                 <Lifecycle>
@@ -35,10 +35,10 @@
 
                 <UI>
                     <Type>Panel</Type>
-                    <Menu>JxCode_PSExporter</Menu>
+                    <Menu>JxAutomation_AssetsFlow</Menu>
                     <Geometry>
                         <Size>
-                            <Height>670</Height>
+                            <Height>800</Height>
                             <Width>400</Width>
                         </Size>
                         <MaxSize>
