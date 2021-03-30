@@ -1,7 +1,7 @@
 #target Photoshop
 
 var DEFAULT_EXPORT_WORKSPACE = "~/Desktop";
-var DEFAULT_QUALITY = 5;
+var DEFAULT_QUALITY = 8;
 var DEFAULT_EXPORT_EXT = ".png";
 
 /*class Path*/
@@ -467,6 +467,9 @@ function Layer_hideAll(document)
 // 循环取出图层名中的多个属性并进行预制处理
 //return LayerNameInfo
 function Layer_getNameInfo(layer) {
+    if(layer == null) {
+        return null;
+    }
     var layerInfo = new LayerNameInfo();
     var index = 0;
     var prop = null;
@@ -733,6 +736,6 @@ function Interface_exportAll() {
 
 }
 function main() {
-    Interface_exportDocumentMetaData();
+    var r = Interface_getActiveLayerNameInfo();
 }
 // main();
